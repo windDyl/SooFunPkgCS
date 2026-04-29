@@ -316,31 +316,23 @@ namespace SooFunPkg
 
         private void ApplyPermissionsRecursively(string path)
         {
-            // 在 Windows 上设置文件权限为可读可执行
-            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+            // 在 Windows 上，ZIP 压缩后的文件默认有合适的权限
+            // 这里只确保所有文件设置为 Normal 属性，避免压缩时继承特殊属性
+            try
             {
-                File.SetAttributes(file, FileAttributes.Normal);
-            }
-            foreach (string dir in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
-            {
-                Directory.SetAttributes(dir, FileAttributes.Normal);
-            }
-            // 设置可执行权限 (在Windows上主要是确保可读)
-            var dirInfo = new DirectoryInfo(path);
-            foreach (var info in dirInfo.GetFileSystemInfos("*", SearchOption.AllDirectories))
-            {
-                try
+                foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
                 {
-                    if ((info.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
-                    {
-                        DirectoryInfo di = (DirectoryInfo)info;
-                        foreach (var fi in di.GetFiles())
-                        {
-                            File.SetAttributes(fi.FullName, FileAttributes.Normal);
-                        }
-                    }
+                    File.SetAttributes(file, FileAttributes.Normal);
                 }
-                catch { }
+                foreach (string dir in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
+                {
+                    DirectoryInfo di = new DirectoryInfo(dir);
+                    di.Attributes = FileAttributes.Normal;
+                }
+            }
+            catch
+            {
+                // 权限设置失败不影响主流程，Windows下通常不影响
             }
         }
     }
